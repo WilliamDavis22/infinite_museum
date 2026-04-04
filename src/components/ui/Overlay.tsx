@@ -124,13 +124,36 @@ export function Overlay() {
   const [radioOpen, setRadioOpen] = useState(false)
   const radioAnchorRef = useRef<HTMLDivElement>(null)
   const [radioPanelX, setRadioPanelX] = useState(0)
+  const [narrowUi, setNarrowUi] = useState(false)
 
   const radio = useMuseumRadio(isLoaded)
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)')
+    const sync = () => setNarrowUi(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
   useLayoutEffect(() => {
-    if (!radioOpen || !radioAnchorRef.current) return
-    const r = radioAnchorRef.current.getBoundingClientRect()
-    setRadioPanelX(r.left + r.width / 2)
+    if (!radioOpen) return
+    function clampRadioPanel() {
+      const vw = window.innerWidth
+      const margin = 12
+      const panelW = Math.min(240, vw - margin * 2)
+      const half = panelW / 2
+      let cx = margin + half
+      if (radioAnchorRef.current) {
+        const r = radioAnchorRef.current.getBoundingClientRect()
+        cx = r.left + r.width / 2
+      }
+      cx = Math.max(margin + half, Math.min(cx, vw - margin - half))
+      setRadioPanelX(cx)
+    }
+    clampRadioPanel()
+    window.addEventListener('resize', clampRadioPanel)
+    return () => window.removeEventListener('resize', clampRadioPanel)
   }, [radioOpen])
 
   useEffect(() => {
@@ -190,11 +213,11 @@ export function Overlay() {
           {/* Room counter — top left */}
           <div style={{
             position: 'absolute',
-            top: '28px',
-            left: '32px',
+            top: 'max(24px, env(safe-area-inset-top, 0px))',
+            left: 'max(16px, env(safe-area-inset-left, 0px))',
             color: 'rgba(255,255,255,0.35)',
-            fontSize: '10px',
-            letterSpacing: '0.4em',
+            fontSize: narrowUi ? '9px' : '10px',
+            letterSpacing: narrowUi ? '0.28em' : '0.4em',
             fontWeight: 300,
             textTransform: 'uppercase',
           }}>
@@ -204,11 +227,17 @@ export function Overlay() {
           {/* Bottom-left controls: play/pause + settings */}
           <div style={{
             position: 'absolute',
-            bottom: '26px',
-            left: '32px',
+            bottom: narrowUi
+              ? 'calc(40px + env(safe-area-inset-bottom, 0px))'
+              : 'calc(26px + env(safe-area-inset-bottom, 0px))',
+            left: narrowUi
+              ? 'max(12px, env(safe-area-inset-left, 0px))'
+              : 'max(32px, env(safe-area-inset-left, 0px))',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            flexWrap: narrowUi ? 'wrap' : 'nowrap',
+            gap: narrowUi ? '10px 14px' : '12px',
+            maxWidth: narrowUi ? 'calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))' : undefined,
             pointerEvents: 'all',
           }}>
             {/* Play / Pause */}
@@ -241,7 +270,7 @@ export function Overlay() {
               }}>
                 {autoTour ? <PauseIcon /> : <PlayIcon />}
               </div>
-              <span>{autoTour ? 'Auto' : 'Paused'}</span>
+              {!narrowUi && <span>{autoTour ? 'Auto' : 'Paused'}</span>}
             </div>
 
             {/* Settings gear */}
@@ -321,9 +350,16 @@ export function Overlay() {
                 transition={{ duration: 0.2 }}
                 style={{
                   position: 'absolute',
-                  bottom: '72px',
-                  left: '32px',
-                  width: '220px',
+                  bottom: narrowUi
+                    ? 'calc(100px + env(safe-area-inset-bottom, 0px))'
+                    : 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                  left: narrowUi
+                    ? 'max(12px, env(safe-area-inset-left, 0px))'
+                    : 'max(32px, env(safe-area-inset-left, 0px))',
+                  width: narrowUi
+                    ? 'min(220px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)))'
+                    : '220px',
+                  boxSizing: 'border-box',
                   background: 'rgba(0,0,0,0.75)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   backdropFilter: 'blur(12px)',
@@ -367,10 +403,14 @@ export function Overlay() {
                 transition={{ duration: 0.2 }}
                 style={{
                   position: 'absolute',
-                  bottom: '72px',
-                  left: radioPanelX > 0 ? `${radioPanelX}px` : '120px',
+                  bottom: narrowUi
+                    ? 'calc(100px + env(safe-area-inset-bottom, 0px))'
+                    : 'calc(72px + env(safe-area-inset-bottom, 0px))',
+                  left: radioPanelX > 0 ? `${radioPanelX}px` : '50%',
                   transform: 'translateX(-50%)',
-                  width: 'min(240px, calc(100vw - 48px))',
+                  width: 'min(240px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)))',
+                  maxWidth: 'calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))',
+                  boxSizing: 'border-box',
                   background: 'rgba(0,0,0,0.75)',
                   border: '1px solid rgba(255,255,255,0.08)',
                   backdropFilter: 'blur(12px)',
@@ -518,16 +558,28 @@ export function Overlay() {
           <div
             style={{
               position: 'absolute',
-              bottom: '28px',
-              right: '32px',
+              bottom: narrowUi
+                ? 'calc(10px + env(safe-area-inset-bottom, 0px))'
+                : 'calc(28px + env(safe-area-inset-bottom, 0px))',
+              ...(narrowUi
+                ? {
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    right: 'auto',
+                    maxWidth: 'calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))',
+                    justifyContent: 'center',
+                  }
+                : {
+                    right: 'max(32px, env(safe-area-inset-right, 0px))',
+                  }),
               pointerEvents: 'all',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               color: 'rgba(255,255,255,0.25)',
-              fontSize: '9px',
-              letterSpacing: '0.3em',
+              fontSize: narrowUi ? '8px' : '9px',
+              letterSpacing: narrowUi ? '0.22em' : '0.3em',
               fontWeight: 300,
               textTransform: 'uppercase',
               transition: 'color 0.3s',
@@ -553,18 +605,30 @@ export function Overlay() {
                 transition={{ duration: 1.0 }}
                 style={{
                   position: 'absolute',
-                  bottom: '30px',
+                  bottom: narrowUi
+                    ? 'calc(112px + env(safe-area-inset-bottom, 0px))'
+                    : 'calc(30px + env(safe-area-inset-bottom, 0px))',
                   left: '50%',
                   transform: 'translateX(-50%)',
                   color: 'rgba(255,255,255,0.3)',
-                  fontSize: '9px',
-                  letterSpacing: '0.5em',
+                  fontSize: narrowUi ? '8px' : '9px',
+                  letterSpacing: narrowUi ? '0.28em' : '0.5em',
                   fontWeight: 300,
                   textTransform: 'uppercase',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: narrowUi ? 'normal' : 'nowrap',
+                  textAlign: 'center',
+                  maxWidth: 'min(320px, calc(100vw - 40px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)))',
+                  lineHeight: narrowUi ? 1.45 : undefined,
+                  paddingLeft: narrowUi ? '8px' : undefined,
+                  paddingRight: narrowUi ? '8px' : undefined,
+                  pointerEvents: 'none',
                 }}
               >
-                Scroll to explore · Auto-touring
+                {narrowUi ? (
+                  <>Scroll to explore<br />Auto-touring</>
+                ) : (
+                  'Scroll to explore · Auto-touring'
+                )}
               </motion.div>
             )}
           </AnimatePresence>

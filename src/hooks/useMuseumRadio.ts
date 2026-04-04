@@ -35,6 +35,20 @@ export function useMuseumRadio(isLoaded: boolean) {
   const [muted, setMutedState] = useState(readStoredMuted)
   const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 
+  const trackIndexRef = useRef(0)
+  const volumeRef = useRef(volume)
+  const mutedRef = useRef(muted)
+
+  useEffect(() => {
+    trackIndexRef.current = trackIndex
+  }, [trackIndex])
+  useEffect(() => {
+    volumeRef.current = volume
+  }, [volume])
+  useEffect(() => {
+    mutedRef.current = muted
+  }, [muted])
+
   const cancelIntroFade = useCallback(() => {
     if (fadeRafRef.current != null) {
       cancelAnimationFrame(fadeRafRef.current)
@@ -52,11 +66,24 @@ export function useMuseumRadio(isLoaded: boolean) {
 
   useEffect(() => {
     const a = new Audio()
-    a.loop = true
     a.preload = 'auto'
+    const onEnded = () => {
+      const el = audioRef.current
+      if (!el) return
+      const next = (trackIndexRef.current + 1) % RADIO_TRACK_COUNT
+      trackIndexRef.current = next
+      setTrackIndex(next)
+      el.src = RADIO_TRACKS[next].src
+      el.load()
+      el.muted = mutedRef.current
+      el.volume = mutedRef.current ? 0 : volumeRef.current
+      void el.play().catch(() => setAutoplayBlocked(true))
+    }
+    a.addEventListener('ended', onEnded)
     audioRef.current = a
     return () => {
       cancelIntroFade()
+      a.removeEventListener('ended', onEnded)
       a.pause()
       audioRef.current = null
     }

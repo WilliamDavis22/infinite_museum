@@ -47,7 +47,7 @@ export function Scene() {
   return (
     <Canvas
       shadows={false}
-      dpr={[1, 1.5]}
+      dpr={[1, 2]}
       gl={{
         antialias: false,
         alpha: false,

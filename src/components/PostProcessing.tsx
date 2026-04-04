@@ -32,7 +32,6 @@ export function PostProcessing() {
         focusDistance={0.015}
         focalLength={0.025}
         bokehScale={2}
-        height={480}
       />
       <Bloom
         intensity={bloomIntensity}
