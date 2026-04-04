@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMuseumStore } from '@/store/useMuseumStore'
+import { useMuseumRadio } from '@/hooks/useMuseumRadio'
+import { RADIO_TRACKS } from '@/constants/radioTracks'
 
 function toRoman(n: number): string {
   const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1]
@@ -34,6 +36,50 @@ function SettingsIcon() {
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" />
+    </svg>
+  )
+}
+
+function RadioIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 10c0-4 4-6 8-6s8 2 8 6v4c0 4-4 6-8 6s-8-2-8-6v-4Z" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none" />
+      <path d="M8 4L6 2M16 4l2-2" />
+    </svg>
+  )
+}
+
+function SpeakerIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 10v4h3l4 3V7L7 10H4Z" />
+      <path d="M16 9c1 1.5 1 4.5 0 6M18.5 7c2 2.5 2 7.5 0 10" />
+    </svg>
+  )
+}
+
+function SpeakerMuteIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M4 10v4h3l4 3V7L7 10H4Z" />
+      <path d="M15 9l6 6M21 9l-6 6" />
+    </svg>
+  )
+}
+
+function ChevronLeftIcon() {
+  return (
+    <svg width="8" height="12" viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M6 1L1 6l5 5" />
+    </svg>
+  )
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg width="8" height="12" viewBox="0 0 8 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M2 1l5 5-5 5" />
     </svg>
   )
 }
@@ -75,6 +121,17 @@ export function Overlay() {
   const [showHint, setShowHint] = useState(true)
   const [copied, setCopied] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [radioOpen, setRadioOpen] = useState(false)
+  const radioAnchorRef = useRef<HTMLDivElement>(null)
+  const [radioPanelX, setRadioPanelX] = useState(0)
+
+  const radio = useMuseumRadio(isLoaded)
+
+  useLayoutEffect(() => {
+    if (!radioOpen || !radioAnchorRef.current) return
+    const r = radioAnchorRef.current.getBoundingClientRect()
+    setRadioPanelX(r.left + r.width / 2)
+  }, [radioOpen])
 
   useEffect(() => {
     if (!isLoaded) return
@@ -103,6 +160,33 @@ export function Overlay() {
           transition={{ duration: 1.5, delay: 0.5 }}
           style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 100 }}
         >
+          <style>{`
+            input[type=range].museum-slider::-webkit-slider-thumb {
+              -webkit-appearance: none;
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: rgba(255,255,255,0.7);
+              cursor: pointer;
+              margin-top: -4.5px;
+            }
+            input[type=range].museum-slider::-webkit-slider-runnable-track {
+              height: 1px;
+              background: rgba(255,255,255,0.15);
+            }
+            input[type=range].museum-slider::-moz-range-thumb {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: rgba(255,255,255,0.7);
+              border: none;
+              cursor: pointer;
+            }
+            input[type=range].museum-slider::-moz-range-track {
+              height: 1px;
+              background: rgba(255,255,255,0.15);
+            }
+          `}</style>
           {/* Room counter — top left */}
           <div style={{
             position: 'absolute',
@@ -170,11 +254,60 @@ export function Overlay() {
                 alignItems: 'center',
                 padding: '4px',
               }}
-              onClick={() => setSettingsOpen((v) => !v)}
+              onClick={() => {
+                setSettingsOpen((v) => !v)
+                setRadioOpen(false)
+              }}
               onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
               onMouseLeave={(e) => (e.currentTarget.style.color = settingsOpen ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)')}
             >
               <SettingsIcon />
+            </div>
+
+            {/* Radio */}
+            <div
+              ref={radioAnchorRef}
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: radioOpen ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)',
+                transition: 'color 0.3s',
+                userSelect: 'none',
+                position: 'relative',
+              }}
+              onClick={() => {
+                setRadioOpen((v) => !v)
+                setSettingsOpen(false)
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = radioOpen ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)')}
+            >
+              <RadioIcon />
+              <span style={{
+                fontSize: '9px',
+                letterSpacing: '0.3em',
+                fontWeight: 300,
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                Radio
+                {radio.autoplayBlocked && (
+                  <span
+                    title="Click anywhere to start audio"
+                    style={{
+                      width: '5px',
+                      height: '5px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,200,120,0.85)',
+                      boxShadow: '0 0 8px rgba(255,200,120,0.5)',
+                    }}
+                  />
+                )}
+              </span>
             </div>
           </div>
 
@@ -204,33 +337,6 @@ export function Overlay() {
                     <span style={LABEL_STYLE}>Tour speed</span>
                     <span style={{ ...LABEL_STYLE, opacity: 0.6 }}>{speedLabel(autoTourSpeed)}</span>
                   </div>
-                  <style>{`
-                    input[type=range].museum-slider::-webkit-slider-thumb {
-                      -webkit-appearance: none;
-                      width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: rgba(255,255,255,0.7);
-                      cursor: pointer;
-                      margin-top: -4.5px;
-                    }
-                    input[type=range].museum-slider::-webkit-slider-runnable-track {
-                      height: 1px;
-                      background: rgba(255,255,255,0.15);
-                    }
-                    input[type=range].museum-slider::-moz-range-thumb {
-                      width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: rgba(255,255,255,0.7);
-                      border: none;
-                      cursor: pointer;
-                    }
-                    input[type=range].museum-slider::-moz-range-track {
-                      height: 1px;
-                      background: rgba(255,255,255,0.15);
-                    }
-                  `}</style>
                   <input
                     type="range"
                     className="museum-slider"
@@ -246,6 +352,163 @@ export function Overlay() {
                     <span style={{ ...LABEL_STYLE, fontSize: '8px', opacity: 0.4 }}>Slow</span>
                     <span style={{ ...LABEL_STYLE, fontSize: '8px', opacity: 0.4 }}>Fast</span>
                   </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Radio panel */}
+          <AnimatePresence>
+            {radioOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  position: 'absolute',
+                  bottom: '72px',
+                  left: radioPanelX > 0 ? `${radioPanelX}px` : '120px',
+                  transform: 'translateX(-50%)',
+                  width: 'min(240px, calc(100vw - 48px))',
+                  background: 'rgba(0,0,0,0.75)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  backdropFilter: 'blur(12px)',
+                  padding: '18px 18px 16px',
+                  pointerEvents: 'all',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <span style={LABEL_STYLE}>Radio</span>
+                  <span style={{ ...LABEL_STYLE, opacity: 0.5, letterSpacing: '0.2em' }}>Loop</span>
+                </div>
+
+                {radio.autoplayBlocked && (
+                  <div style={{
+                    ...LABEL_STYLE,
+                    fontSize: '8px',
+                    letterSpacing: '0.15em',
+                    opacity: 0.55,
+                    marginBottom: '12px',
+                    lineHeight: 1.5,
+                  }}>
+                    Tap the scene or any control if you do not hear sound yet.
+                  </div>
+                )}
+
+                {/* Prev / current / next */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  marginBottom: '14px',
+                }}>
+                  <button
+                    type="button"
+                    aria-label="Previous track"
+                    onClick={() => radio.prevTrack()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'rgba(255,255,255,0.45)',
+                      width: '28px',
+                      height: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    <ChevronLeftIcon />
+                  </button>
+                  <span style={{
+                    color: 'rgba(255,255,255,0.45)',
+                    fontSize: '9px',
+                    letterSpacing: '0.25em',
+                    fontWeight: 300,
+                    textTransform: 'uppercase',
+                    flex: 1,
+                    textAlign: 'center',
+                  }}>
+                    {radio.currentLabel}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next track"
+                    onClick={() => radio.nextTrack()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      color: 'rgba(255,255,255,0.45)',
+                      width: '28px',
+                      height: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    <ChevronRightIcon />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+                  {RADIO_TRACKS.map((t, i) => (
+                    <button
+                      key={t.src}
+                      type="button"
+                      onClick={() => radio.selectTrack(i)}
+                      style={{
+                        background: i === radio.trackIndex ? 'rgba(255,255,255,0.06)' : 'transparent',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        color: i === radio.trackIndex ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.3)',
+                        fontSize: '9px',
+                        letterSpacing: '0.28em',
+                        fontWeight: 300,
+                        textTransform: 'uppercase',
+                        padding: '8px 10px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'color 0.2s, background 0.2s',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Volume + mute */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <button
+                    type="button"
+                    aria-label={radio.muted ? 'Unmute' : 'Mute'}
+                    onClick={() => radio.setMuted(!radio.muted)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: radio.muted ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {radio.muted ? <SpeakerMuteIcon /> : <SpeakerIcon />}
+                  </button>
+                  <input
+                    type="range"
+                    className="museum-slider"
+                    min={0}
+                    max={1}
+                    step={0.02}
+                    value={radio.volume}
+                    onChange={(e) => radio.setVolume(Number(e.target.value))}
+                    aria-label="Radio volume"
+                    style={{ ...SLIDER_STYLE, flex: 1 }}
+                  />
                 </div>
               </motion.div>
             )}
