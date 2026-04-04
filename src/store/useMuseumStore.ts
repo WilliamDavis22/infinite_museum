@@ -22,7 +22,7 @@ interface MuseumState {
   shatterTriggered: boolean
   isLoaded: boolean
   autoTour: boolean
-  autoTourSpeed: number  // 0.5 – 10.0
+  autoTourSpeed: number  // 0.1 – 10.0
 
   // Actions
   setCameraZ: (z: number) => void
@@ -43,7 +43,7 @@ export const useMuseumStore = create<MuseumState>((set, get) => ({
   shatterTriggered: false,
   isLoaded: false,
   autoTour: true,
-  autoTourSpeed: 1.5,
+  autoTourSpeed: .5,
 
   setCameraZ: (z) => {
     const roomIndex = Math.max(0, Math.floor(z / ROOM_STRIDE))
