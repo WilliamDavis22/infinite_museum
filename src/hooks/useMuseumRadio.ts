@@ -179,9 +179,10 @@ export function useMuseumRadio(isLoaded: boolean) {
 
     let cancelled = false
 
-    const ri = Math.floor(Math.random() * RADIO_TRACK_COUNT)
-    setTrackIndex(ri)
-    a.src = RADIO_TRACKS[ri].src
+    const startIndex = 0
+    trackIndexRef.current = startIndex
+    setTrackIndex(startIndex)
+    a.src = RADIO_TRACKS[startIndex].src
     a.load()
 
     const m = readStoredMuted()
