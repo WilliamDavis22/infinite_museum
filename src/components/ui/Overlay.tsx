@@ -625,9 +625,9 @@ export function Overlay() {
                 }}
               >
                 {narrowUi ? (
-                  <>Scroll to explore<br />Auto-touring</>
+                  <>Scroll to explore<br />Drag to look around · Auto-touring</>
                 ) : (
-                  'Scroll to explore · Auto-touring'
+                  'Scroll to explore · Drag to look around · Auto-touring'
                 )}
               </motion.div>
             )}
