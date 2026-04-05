@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { DriftingGeometryCloud } from '@/components/shared/RoomAccents'
 
 interface Props {
   position: [number, number, number]
@@ -14,7 +15,7 @@ export function Corridor({ position, accentColor, emissiveColor }: Props) {
   const particlesRef = useRef<THREE.InstancedMesh>(null)
 
   const particleData = useMemo(() => {
-    const count = 40
+    const count = 72
     const positions: [number, number, number][] = []
     const phases: number[] = []
     for (let i = 0; i < count; i++) {
@@ -68,17 +69,38 @@ export function Corridor({ position, accentColor, emissiveColor }: Props) {
         <meshStandardMaterial
           color={accentColor}
           emissive={emissiveColor}
-          emissiveIntensity={0.8}
-          metalness={0.9}
-          roughness={0.2}
+          emissiveIntensity={0.48}
+          metalness={0.85}
+          roughness={0.28}
         />
       </mesh>
       {/* Subtle archway ambient light */}
       <pointLight
         position={[0, 4.5, 0]}
         color={emissiveColor}
-        intensity={0.8}
-        distance={12}
+        intensity={0.55}
+        distance={14}
+      />
+      <pointLight position={[-2.2, 1.2, -3]} color={accentColor} intensity={0.35} distance={11} />
+      <pointLight position={[2.2, 1.2, 3]} color={emissiveColor} intensity={0.35} distance={11} />
+      {/* Drifting polyhedra — reads as debris between galleries */}
+      <DriftingGeometryCloud
+        count={32}
+        bounds={[5.2, 3.2, 9]}
+        color={emissiveColor}
+        zCenter={0}
+        emissiveIntensity={0.26}
+        sizeMin={0.06}
+        sizeMax={0.22}
+      />
+      <DriftingGeometryCloud
+        count={18}
+        bounds={[4.5, 2.8, 8]}
+        color={accentColor}
+        zCenter={0}
+        emissiveIntensity={0.18}
+        sizeMin={0.05}
+        sizeMax={0.16}
       />
       {/* Ambient particles drifting through */}
       <instancedMesh ref={particlesRef} args={[undefined, undefined, particleData.count]}>

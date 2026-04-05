@@ -5,6 +5,7 @@ import type { ObsidianConfig } from '@/generation/archetypes/obsidian'
 import { ReflectiveFloor } from '@/components/shared/ReflectiveFloor'
 import { FloatingFrame } from '@/components/shared/FloatingFrame'
 import { ParticleDust } from '@/components/shared/ParticleDust'
+import { DriftingGeometryCloud, DistantSilhouettes, VerticalLightColumns } from '@/components/shared/RoomAccents'
 
 interface Props {
   config: ObsidianConfig
@@ -47,10 +48,13 @@ export function ObsidianRoom({ config, zOffset }: Props) {
       <fog attach="fog" args={[palette.fogColor, 5, fogFar]} />
 
       {/* Ambient and key lighting */}
-      <ambientLight intensity={0.03} />
+      <ambientLight intensity={0.045} />
       <pointLight position={[0, 12, -20]} color="#fffae0" intensity={2} distance={30} />
-      <pointLight position={[-8, 4, -15]} color={palette.emissive} intensity={0.5} distance={20} />
-      <pointLight position={[8, 4, -15]} color={palette.emissive} intensity={0.5} distance={20} />
+      <pointLight position={[-8, 4, -15]} color={palette.emissive} intensity={0.65} distance={22} />
+      <pointLight position={[8, 4, -15]} color={palette.emissive} intensity={0.65} distance={22} />
+      <pointLight position={[-10, 6, -22]} color={palette.accent} intensity={0.45} distance={18} />
+      <pointLight position={[10, 6, -18]} color={palette.primary} intensity={0.4} distance={18} />
+      <pointLight position={[0, 7.2, -8]} color={palette.accent} intensity={0.55} distance={30} />
 
       {/* Reflective obsidian floor */}
       <ReflectiveFloor width={24} depth={40} color="#0a0a0a" />
@@ -89,6 +93,35 @@ export function ObsidianRoom({ config, zOffset }: Props) {
         <meshBasicMaterial color="#fffae0" transparent opacity={0.008} depthWrite={false} side={THREE.DoubleSide} />
       </mesh>
 
+      <DistantSilhouettes color="#060608" emissive={palette.primary} />
+      <DriftingGeometryCloud
+        count={72}
+        bounds={[24, 7.5, 36]}
+        color={palette.emissive}
+        zCenter={-20}
+        emissiveIntensity={0.34}
+        sizeMin={0.1}
+        sizeMax={0.48}
+      />
+      <DriftingGeometryCloud
+        count={48}
+        bounds={[26, 6, 38]}
+        color={palette.accent}
+        zCenter={-20}
+        emissiveIntensity={0.22}
+        sizeMin={0.08}
+        sizeMax={0.32}
+      />
+      <VerticalLightColumns
+        color={palette.emissive}
+        z={-38.5}
+        positions={[
+          [-4, 5],
+          [0, 6],
+          [4, 5],
+        ]}
+      />
+
       {/* Gilded frames — left wall */}
       {FRAME_LEFT_POSITIONS.slice(0, Math.ceil(frameCount / 2)).map((pos, i) => (
         <FloatingFrame
@@ -117,13 +150,19 @@ export function ObsidianRoom({ config, zOffset }: Props) {
         color={palette.emissive}
         opacity={0.4}
       />
+      <ParticleDust
+        count={Math.min(140, dustDensity + 48)}
+        bounds={[22, 7, 38]}
+        color={palette.accent}
+        opacity={0.22}
+      />
 
       {/* Subtle floor mist */}
       <ParticleDust
-        count={80}
+        count={100}
         bounds={[20, 0.5, 36]}
         color={palette.fogColor}
-        opacity={0.15}
+        opacity={0.18}
       />
     </group>
   )

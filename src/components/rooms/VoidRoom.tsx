@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { VoidConfig } from '@/generation/archetypes/void'
+import { TwinkleField, DriftingGeometryCloud } from '@/components/shared/RoomAccents'
 
 interface Props {
   config: VoidConfig
@@ -80,7 +81,13 @@ export function VoidRoom({ config, zOffset }: Props) {
     <group position={[0, 0, -zOffset]}>
       <fog attach="fog" args={[palette.fogColor, 3, fogFar]} />
 
-      <ambientLight intensity={0.01} />
+      <ambientLight intensity={0.022} />
+
+      <TwinkleField count={72} bounds={[38, 14, 34]} color={palette.emissive} zCenter={-20} />
+      <TwinkleField count={48} bounds={[42, 10, 38]} color={palette.accent} zCenter={-20} />
+
+      <pointLight position={[-12, 5, -14]} color={palette.accent} intensity={0.35} distance={40} />
+      <pointLight position={[12, 5, -26]} color={palette.primary} intensity={0.3} distance={40} />
 
       {/* Focal element centered in room */}
       <group position={[0, 2.5 + scale * 0.3, -20]}>
@@ -94,6 +101,25 @@ export function VoidRoom({ config, zOffset }: Props) {
           distance={25}
         />
       </group>
+
+      <DriftingGeometryCloud
+        count={52}
+        bounds={[44, 12, 40]}
+        color={palette.accent}
+        zCenter={-20}
+        emissiveIntensity={0.2}
+        sizeMin={0.12}
+        sizeMax={0.65}
+      />
+      <DriftingGeometryCloud
+        count={36}
+        bounds={[48, 10, 44]}
+        color={config.lightColor}
+        zCenter={-20}
+        emissiveIntensity={0.14}
+        sizeMin={0.15}
+        sizeMax={0.55}
+      />
 
       {/* Minimal floor — near-invisible */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -20]}>
