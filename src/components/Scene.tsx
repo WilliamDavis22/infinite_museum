@@ -56,7 +56,12 @@ export function Scene() {
         toneMappingExposure: 0.85,
       }}
       camera={{ fov: 60, near: 0.1, far: 500, position: [0, 2, 0] }}
-      style={{ width: '100%', height: '100%', background: '#000000' }}
+      style={{
+        width: '100%',
+        height: '100%',
+        background: '#000000',
+        touchAction: 'none' as const,
+      }}
     >
       <SceneContent />
     </Canvas>

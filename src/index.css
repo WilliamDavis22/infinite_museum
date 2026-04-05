@@ -22,4 +22,6 @@ html, body {
 
 canvas {
   display: block;
+  /* Let the museum receive drags on iOS; otherwise Safari treats them as scroll/zoom */
+  touch-action: none;
 }

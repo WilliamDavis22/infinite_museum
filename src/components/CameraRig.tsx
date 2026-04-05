@@ -35,6 +35,7 @@ export function CameraRig() {
   const yawRef = useRef(0)
   const pitchRef = useRef(0)
   const dragLookRef = useRef(false)
+  const activePointerIdRef = useRef<number | null>(null)
   const lastPointerXRef = useRef(0)
   const lastPointerYRef = useRef(0)
 
@@ -93,65 +94,70 @@ export function CameraRig() {
 
     const el = gl.domElement
 
-    function pointerX(e: MouseEvent | TouchEvent): number {
-      if ('touches' in e && e.touches.length > 0) return e.touches[0].clientX
-      if ('clientX' in e) return e.clientX
-      return 0
-    }
-
-    function pointerY(e: MouseEvent | TouchEvent): number {
-      if ('touches' in e && e.touches.length > 0) return e.touches[0].clientY
-      if ('clientY' in e) return e.clientY
-      return 0
-    }
-
-    function onPointerDown(e: MouseEvent | TouchEvent) {
-      if (e instanceof MouseEvent && e.button !== 0) return
+    /**
+     * Pointer Events + setPointerCapture: iOS Safari often does not deliver touchmove to window
+     * or treats one-finger drag as scroll unless touch-action:none and capture keep events on canvas.
+     */
+    function onLookPointerDown(e: PointerEvent) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      if (activePointerIdRef.current !== null) return
+      activePointerIdRef.current = e.pointerId
+      try {
+        el.setPointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
       dragLookRef.current = true
-      lastPointerXRef.current = pointerX(e)
-      lastPointerYRef.current = pointerY(e)
+      lastPointerXRef.current = e.clientX
+      lastPointerYRef.current = e.clientY
       markInput()
     }
 
-    function onPointerMove(e: MouseEvent | TouchEvent) {
-      if (!dragLookRef.current) return
-      const x = pointerX(e)
-      const y = pointerY(e)
-      const dx = x - lastPointerXRef.current
-      const dy = y - lastPointerYRef.current
-      lastPointerXRef.current = x
-      lastPointerYRef.current = y
+    function onLookPointerMove(e: PointerEvent) {
+      if (!dragLookRef.current || e.pointerId !== activePointerIdRef.current) return
+      const dx = e.clientX - lastPointerXRef.current
+      const dy = e.clientY - lastPointerYRef.current
+      lastPointerXRef.current = e.clientX
+      lastPointerYRef.current = e.clientY
       yawRef.current = clamp(yawRef.current - dx * YAW_SENSITIVITY, -YAW_LIMIT, YAW_LIMIT)
-      // Drag down → look down (invert dy into pitch)
       pitchRef.current = clamp(pitchRef.current - dy * PITCH_SENSITIVITY, -PITCH_LIMIT, PITCH_LIMIT)
       markInput()
     }
 
-    function endDrag() {
+    function endLookPointer(e: PointerEvent) {
+      if (e.pointerId !== activePointerIdRef.current) return
+      activePointerIdRef.current = null
+      dragLookRef.current = false
+      try {
+        el.releasePointerCapture(e.pointerId)
+      } catch {
+        /* ignore */
+      }
+    }
+
+    function onLostPointerCapture(e: PointerEvent) {
+      if (activePointerIdRef.current !== e.pointerId) return
+      activePointerIdRef.current = null
       dragLookRef.current = false
     }
 
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
-    el.addEventListener('mousedown', onPointerDown)
-    window.addEventListener('mousemove', onPointerMove)
-    window.addEventListener('mouseup', endDrag)
-    el.addEventListener('touchstart', onPointerDown, { passive: true })
-    window.addEventListener('touchmove', onPointerMove, { passive: true })
-    window.addEventListener('touchend', endDrag)
-    window.addEventListener('touchcancel', endDrag)
+    el.addEventListener('pointerdown', onLookPointerDown)
+    el.addEventListener('pointermove', onLookPointerMove)
+    el.addEventListener('pointerup', endLookPointer)
+    el.addEventListener('pointercancel', endLookPointer)
+    el.addEventListener('lostpointercapture', onLostPointerCapture)
     return () => {
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
-      el.removeEventListener('mousedown', onPointerDown)
-      window.removeEventListener('mousemove', onPointerMove)
-      window.removeEventListener('mouseup', endDrag)
-      el.removeEventListener('touchstart', onPointerDown)
-      window.removeEventListener('touchmove', onPointerMove)
-      window.removeEventListener('touchend', endDrag)
-      window.removeEventListener('touchcancel', endDrag)
+      el.removeEventListener('pointerdown', onLookPointerDown)
+      el.removeEventListener('pointermove', onLookPointerMove)
+      el.removeEventListener('pointerup', endLookPointer)
+      el.removeEventListener('pointercancel', endLookPointer)
+      el.removeEventListener('lostpointercapture', onLostPointerCapture)
     }
   }, [setCameraZ, gl])
 
