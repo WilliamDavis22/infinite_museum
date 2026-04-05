@@ -18,8 +18,6 @@ const _m = new THREE.Matrix4()
 // How long (seconds) after user input before auto-tour resumes
 const RESUME_DELAY = 4.0
 
-/** Max look-left / look-right (radians) — ~52° total each way */
-const YAW_LIMIT = 0.9
 const YAW_SENSITIVITY = 0.0022
 
 /** Max look up / down (radians) — ~±28° */
@@ -119,8 +117,14 @@ export function CameraRig() {
       const dy = e.clientY - lastPointerYRef.current
       lastPointerXRef.current = e.clientX
       lastPointerYRef.current = e.clientY
-      yawRef.current = clamp(yawRef.current - dx * YAW_SENSITIVITY, -YAW_LIMIT, YAW_LIMIT)
-      pitchRef.current = clamp(pitchRef.current - dy * PITCH_SENSITIVITY, -PITCH_LIMIT, PITCH_LIMIT)
+      yawRef.current -= dx * YAW_SENSITIVITY
+      // Touch: invert pitch vs mouse (feels natural on phones)
+      const pitchDyMul = e.pointerType === 'touch' ? 1 : -1
+      pitchRef.current = clamp(
+        pitchRef.current + pitchDyMul * dy * PITCH_SENSITIVITY,
+        -PITCH_LIMIT,
+        PITCH_LIMIT,
+      )
       markInput()
     }
 
